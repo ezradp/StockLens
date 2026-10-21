@@ -12,6 +12,9 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "db:migrate": "node --env-file-if-exists=.env scripts/migrate.mts",
+    "db:seed": "node --env-file-if-exists=.env scripts/seed-fundamentals.mts",
+    "db:seed:prices": "node --env-file-if-exists=.env scripts/seed-prices.mts",
+    "db:verify": "node --env-file-if-exists=.env scripts/verify-data.mts",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
