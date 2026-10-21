@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+/*
+  Tema default: dark charcoal/navy (PRD §6).
+  Light mode opsional — bila pengaturan tema selesai dibuat (Fase 9),
+  elemen `html[data-theme="light"]` mengoverride token di bawah.
+*/
+:root {
+  --background: #101116;
+  --foreground: #e8e6e3;
+  --card: #17181f;
+  --muted: #20232c;
+  --muted-foreground: #9a99a3;
+  --border: #262833;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --ring: #3b82f6;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+}
+
+[data-theme="light"] {
+  --background: #f6f7f8;
+  --foreground: #16181d;
+  --card: #ffffff;
+  --muted: #ececed;
+  --muted-foreground: #5f6068;
+  --border: #dcdee3;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --ring: #2563eb;
+  --success: #16a34a;
+  --danger: #dc2626;
+  --warning: #d97706;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* Angka keuangan rapi per kolom — lihat prinsip presentasi PRD §6. */
+@utility tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
