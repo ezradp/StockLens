@@ -24,3 +24,13 @@ Sumber kebenaran: file migrasi di `database/migrations/` ( Portabilitas PostgreS
 `app.auth_uid()` adalah pengganti portabel `auth.uid()`: membaca JWT dari
 `request.jwt.claims` (diisi PostgREST/Supabase) dan mengembalikan uuid atau NULL.
 Set lokal untuk pengujian: `SET "request.jwt.claims" = '{"sub":"<uuid>"}'`.
+
+## Bootstrap akun & default kepemilikan (0006, 0007)
+
+- Trigger `on_auth_user_created` (Supabase-only, dibungkus guard `auth.users`):
+  setiap user baru di `auth.users` otomatis mendapat baris `profiles` (backfill juga
+  dieksekusi sekali untuk user lama).
+- Kolom `user_id` pada tabel personal (`import_batches`, `watchlists`, `portfolios`,
+  `valuation_scenarios`, `saved_screens`, `research_notes`) memakai
+  `DEFAULT app.auth_uid()`: INSERT dari client tidak perlu mengirim `user_id`,
+  dan policy `WITH CHECK` (0005) tetap menolak `user_id` milik user lain.

@@ -10,8 +10,8 @@ Platform riset investasi web — fundamental, screener, DCF valuation, dan porto
 
 | Fase | Konten | Status |
 |---|---|---|
-| 1 — Foundation | Scaffolding, UI shell dark, migrasi SQL + RLS, testing pipeline | 🚧 SDK |
-| 2 — Authentication | Supabase Auth, profiles, RLS test isolasi 2 user | ⏳ |
+| 1 — Foundation | Scaffolding, UI shell dark, migrasi SQL + RLS, testing pipeline | ✅ Selesai (7 migrasi diterapkan ke Supabase) |
+| 2 — Authentication | Supabase Auth, profiles, proxy guard, RLS test isolasi 2 user | ✅ Selesai (14/14 test, build hijau) |
 | 3 — Data | Seed historis (EDGAR + Tiingo), CSV import wizard | ⏳ |
 | 4 — Stock Explorer | Company detail, financial tables, charts, metrics | ⏳ |
 | 5 — Screener & Comparison | Filter, sorting, scoring, saved screens, compare | ⏳ |
@@ -26,6 +26,26 @@ Setiap fase lulus gerbang: `lint`, `typecheck`, `test`, `build`.
 
 - **Node.js ≥ 22.12** (migration runner memakai `--env-file-if-exists`; dikembangkan dengan Node 24)
 - npm (bawaan Node)
+
+## Autentikasi (Fase 2)
+
+- **Supabase Auth** email+password. Setiap user baru mendapat baris `profiles` otomatis
+  (trigger `on_auth_user_created`, migrasi `0006`).
+- Route guard di `src/proxy.ts` — konvensi `proxy` Next.js 16 (pengganti `middleware`):
+  halaman app wajib login, halaman auth dialihkan ke `/overview` bila sudah login.
+  Guard kedua (defence-in-depth) ada di `src/app/(app)/layout.tsx`.
+- Kolom `user_id` pada semua tabel personal punya `DEFAULT app.auth_uid()` (migrasi `0007`),
+  jadi INSERT dari client otomatis melekat ke pemilik JWT; policy `WITH CHECK` (0005)
+  tetap menolak `user_id` milik user lain.
+- Elemen shell `(app)` dinilai dinamis (`export const instant = false`) karena shell
+  berada di balik sesi — Next 16 Cache Components tidak prerender guard ber-cookie.
+- **Email confirmation**: ikuti default project Supabase (rekomendasi: ON). Bila ON,
+  pendaftaran menampilkan instruksi "cek email" lalu user masuk setelah konfirmasi.
+  Pesan galat login selalu generik agar tidak membocorkan keberadaan akun.
+- **Integration test isolasi RLS** (`tests/integration/rls.test.ts`) berjalan otomatis
+  saat kredensial Supabase ada di `.env`: membuat 2 test users (email
+  `stocklens-…@stocklens.test`), memverifikasi user A tidak melihat/mengubah/menghapus
+  data user B, lalu **menghapus** kedua user + datanya di akhir test.
 
 ## Getting Started
 
@@ -70,10 +90,8 @@ state penyiapan yang jujur sampai kredensial/database tersedia — tanpa data pa
 ## Testing
 
 ```bash
-npm test            # unit (Vitest) — kalkulasi finansial, env contract
+npm test            # unit + integration (RLS isolation) — berjalan bila kredensial ada
 npm run test:watch
-# Integration (database terisolasi, mis. Supabase dev/branch):
-TEST_DATABASE_URL=postgres://... npx vitest run tests/integration
 # E2E (Playwright — butuh browser sekali saja):
 npx playwright install chromium
 npm run test:e2e
@@ -88,6 +106,8 @@ independen — bukan sekadar membandingkan snapshot halaman.
 src/
   app/            # Routing & halaman (App Router)
     (app)/        # Shell ber-autentikasi (10 route navigasi utama)
+    (auth)/       # Login & register (server actions + Supabase Auth)
+  proxy.ts        # Guard sesi per request (konvensi proxy Next 16)
   components/     # UI primitives (Button/Card/Badge/…) & state (Empty/Error/Skeleton)
   engine/         # Calculation engine murni (tanpa I/O, unit-testable)
   lib/            # Env, Supabase client, formatter, csv (Fase 3)
