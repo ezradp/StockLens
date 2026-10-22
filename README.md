@@ -17,7 +17,7 @@ Platform riset investasi web — fundamental, screener, DCF valuation, dan porto
 | 5 — Screener & Comparison | Filter, sorting, scoring, saved screens, compare | ✅ Selesai (filter+sort+skor 0–100, layar tersimpan RLS, compare 2–5; 64 test) |
 | 6 — DCF Engine | Kalkulator + sensitivity + scenarios | ✅ Selesai (engine teruji golden; matriks sensitivitas; skenario tersimpan; saham beredar via 0009) |
 | 7 — Portfolio Tracker | Transaksi, cost basis, P/L, alokasi | ✅ Selesai (average cost + fee, realized/unrealized, kas ledger, donut alokasi; 84 test) |
-| 8 — Insights & Research | Rule-based insights, notes | ⏳ |
+| 8 — Insights & Research | Rule-based insights, notes | ✅ Selesai (19 aturan tetap transparan di engine, feed wawasan lintas perusahaan di Overview, kartu wawasan di detail explorer, CRUD research notes; 91 test) |
 | 9 — QA & Deployment | E2E, keamanan, README deploy | ⏳ |
 
 Setiap fase lulus gerbang: `lint`, `typecheck`, `test`, `build`.

@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, LineChart, Table2 } from "lucide-react";
+import { ArrowLeft, Lightbulb, LineChart, Table2 } from "lucide-react";
 import { computeFundamentals } from "@/engine/fundamentals";
+import { buildScreenerRows, type ScreenerSourceRow } from "@/engine/screener";
+import { buildInsights, insightCoverage, type Insight } from "@/engine/insights";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/states/empty-state";
 import { PriceChart, type PricePoint } from "@/components/charts/price-chart";
@@ -119,6 +121,36 @@ function CompanyDetail({
 
   const anyStatements = statements.length > 0;
 
+  // Wawasan memakai jalur yang sama dengan screener (kode tunggal, tanpa duplikasi):
+  // build ulang ScreenerRow untuk SATU perusahaan dari data yang sudah terambil.
+  const insightSource: ScreenerSourceRow = {
+    meta: {
+      id: company.id,
+      ticker: company.ticker,
+      name: company.name,
+      sector: company.sector,
+      currency: company.currency,
+    },
+    statements,
+    // Hanya 401 bar terakhir — cukup untuk return 1 th ± patokan.
+    prices: sortedPrices.slice(-401).map((point) => ({ date: point.date, close: point.close })),
+  };
+  const insightRow = buildScreenerRows([insightSource])[0] ?? null;
+  const insights = insightRow ? buildInsights(insightRow) : [];
+  const coverageMissing = insightRow ? insightCoverage(insightRow) : [];
+
+  const TONE_TEXT: Record<Insight["tone"], string> = {
+    positive: "text-green-400",
+    neutral: "text-muted-foreground",
+    caution: "text-amber-400",
+  };
+  const TONE_LABEL: Record<Insight["tone"], string> = {
+    positive: "positif",
+    neutral: "netral",
+    caution: "kewaspadaan",
+  };
+
+
   return (
     <>
       <Link
@@ -207,6 +239,50 @@ function CompanyDetail({
           />
         </div>
       )}
+
+      {insights.length > 0 ? (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Lightbulb className="h-4 w-4" aria-hidden="true" />
+              Wawasan (aturan tetap)
+            </CardTitle>
+            <CardDescription>
+              Aturan yang sama untuk semua perusahaan — transparan & diaudit dari kode,
+              bukan AI. {coverageMissing.length > 0
+                ? `Tanpa data: ${coverageMissing.join(", ")} — aturan terkait tidak menyala (tidak dipalsukan).`
+                : "Semua metrik kunci tersedia."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-sm">
+              {insights.map((insight) => (
+                <li key={insight.ruleId} className="flex items-start gap-2">
+                  <span className="mt-1 text-xs text-muted-foreground">
+                    {TONE_LABEL[insight.tone]}
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className={
+                      insight.tone === "positive"
+                        ? "mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-green-500"
+                        : insight.tone === "caution"
+                          ? "mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500"
+                          : "mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400"
+                    }
+                  />
+                  <span className={TONE_TEXT[insight.tone]}>
+                    {insight.text}
+                    <span className="ml-2 font-mono text-[10px] text-muted-foreground">
+                      {insight.ruleId}
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      ) : null}
     </>
   );
 }
