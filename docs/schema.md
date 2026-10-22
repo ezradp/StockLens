@@ -5,7 +5,7 @@ Sumber kebenaran: file migrasi di `database/migrations/` ( Portabilitas PostgreS
 | Tabel | Penggunaan | Pemilik | Catatan kunci |
 |---|---|---|---|
 | `profiles` | Preferensi pengguna | 1 baris per user | `id` = auth user id; FK ke `auth.users` ditambahkan secara kondisional di Supabase |
-| `companies` | Master perusahaan | Bersama | `lower(ticker)` unik; sektor/industry dari SIC (seed EDGAR) |
+| `companies` | Master perusahaan | Bersama | `lower(ticker)` unik; sektor/industry dari SIC (seed EDGAR); `shares_outstanding` (0009, nullable) untuk DCF per saham |
 | `market_prices` | Barisan harga OGHLV | Bersama (baca) | Unik `(company_id, date)`; `source_type`/`source_name`/`import_batch_id` wajib transparan; CHECK bentuk candle |
 | `financial_statements` | Pernyataan keuangan | Bersama (baca) | `data_json` per baralan; unik `(company_id, statement_type, period_type, period_end)` |
 | `import_batches` | Riwayat impor CSV | User | `status` + jumlah baris diterima/ditolak |
@@ -41,3 +41,10 @@ Set lokal untuk pengujian: `SET "request.jwt.claims" = '{"sub":"<uuid>"}'`.
   memegang `import_batch_id` — FK batch memakai `ON DELETE SET NULL`, jadi menghapus
   riwayat impor tidak boleh diblokir CHECK. Transparansi tetap dijamin lewat
   `source_name` (nama file sumber); CHECK baru: baris impor wajib punya `source_name`.
+
+## Jumlah saham beredar (0009)
+
+- `companies.shares_outstanding bigint NULL` — diisi seed/impor/admin; nullable karena
+  banyak sumber tidak menyediakannya. DCF nilai-per-saham menunggu angka ini ATAU
+  asumsi manual di halaman Valuasi (disimpan per-user lewat `valuation_scenarios`
+  dalam `assumptions_json.sharesOutstanding`).
