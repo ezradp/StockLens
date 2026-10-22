@@ -1,0 +1,5 @@
+.agents/
+skills-lock.json
+.taste-skill/
+.env*
+!.env.example
