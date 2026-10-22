@@ -1,50 +1,83 @@
-import { FileUp } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { EmptyState } from "@/components/states/empty-state";
+import { SetupRequired } from "@/components/setup-required";
+import { getEnvStatus } from "@/lib/env";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { ImportWizard, type CompanyOption } from "./import-wizard";
 
 export const metadata = {
   title: "Data Import",
 };
 
-const PRICE_FORMAT = "date, ticker, open, high, low, close, volume";
-const FUNDAMENTAL_FORMAT =
-  "ticker, period_end, revenue, net_income, total_assets, total_liabilities, total_equity, operating_cash_flow, capex, eps";
+export const instant = false; // membaca sesi & daftar perusahaan — blokir shell statis
 
-export default function ImportPage() {
+const SETUP_STEPS = [
+  {
+    title: "Buat project Supabase (free tier)",
+    description: "Di supabase.com buat project, catat Project URL, anon key, service role key, dan connection string.",
+  },
+  {
+    title: "Isi file .env",
+    description: 'Salin .env.example menjadi .env lalu isi kredensial Supabase (lihat card "Environment" di Settings).',
+  },
+  {
+    title: "Jalankan migrasi + seed",
+    description: "npm run db:migrate membuat tabel; npm run db:seed mengisi master perusahaan dari SEC EDGAR (gratis).",
+  },
+];
+
+export default async function ImportPage() {
+  const status = getEnvStatus();
+
+  if (!status.supabaseConfigured) {
+    return (
+      <>
+        <PageHeader
+          title="Data Import"
+          subtitle="Jalur utama memasukkan data pasar — CSV yang Anda miliki"
+        />
+        <SetupRequired
+          steps={SETUP_STEPS}
+          note="Tanpa database terhubung wizard tetap tidak bisa menulis; ikuti langkah di atas untuk mengaktifkannya."
+        />
+      </>
+    );
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.from("companies").select("ticker, name").order("ticker");
+  const companies: CompanyOption[] = (data ?? []).map((company) => ({
+    ticker: company.ticker,
+    name: company.name,
+  }));
+
   return (
     <>
       <PageHeader
         title="Data Import"
-        subtitle="Jalur utama memasukkan data pasar — CSV yang Anda miliki"
+        subtitle="Jalur utama memasukkan data pasar — CSV milik Anda, divalidasi baris per baris"
       />
-      <EmptyState
-        icon={FileUp}
-        title="CSV import wizard menunggu implementasi"
-        description="Unggah CSV, preview, mapping kolom, pilih format tanggal & mata uang, validasi baris (duplikat, nilai kosong, format tidak valid), konfirmasi, lalu atur dataset dari riwayat impor."
-        phase="Fase 3 — Demo Data & CSV Import"
-      />
+
+      <ImportWizard companies={companies} />
+
       <Card className="mt-6">
         <CardHeader>
-          <CardTitle>Format minimum yang didukung</CardTitle>
-          <CardDescription>
-            Tidak semua kolom wajib — aplikasi menunjukkan metrik mana yang bisa dihitung dari
-            kolom yang tersedia.
-          </CardDescription>
+          <CardTitle>Aturan main</CardTitle>
+          <CardDescription>Transparansi suplai data &amp; kuota free tier</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div>
-            <p className="mb-1 text-xs font-medium text-muted-foreground">Harga saham</p>
-            <code className="tnum block overflow-x-auto rounded-md bg-muted px-3 py-2 text-xs">
-              {PRICE_FORMAT}
-            </code>
-          </div>
-          <div>
-            <p className="mb-1 text-xs font-medium text-muted-foreground">Data fundamental</p>
-            <code className="tnum block overflow-x-auto rounded-md bg-muted px-3 py-2 text-xs">
-              {FUNDAMENTAL_FORMAT}
-            </code>
-          </div>
+        <CardContent className="space-y-2 text-xs text-muted-foreground">
+          <p>
+            Harga yang diimpor ditulis dengan <code>source_type=&apos;import&apos;</code> dan
+            menimpa baris tanggal sama untuk perusahaan yang dipilih (unique
+            <code> company_id + date</code>). Penulisan data pasar hanya dilakukan server; hak Anda
+            tercatat via riwayat <code>import_batches</code> milik user (RLS).
+          </p>
+          <p>
+            Fondamen ditulis per kelompok (statement_type + period_end) menimpa kelompok tanggal yang
+            sama — baris &apos;seed&apos; dan &apos;provider&apos; tidak tertimpa oleh wizard, gunakan
+            <code> npm run db:seed</code> untuk memperbarui seed.
+          </p>
+          <p>File lebih dari 100.000 baris dibatasi demi kuota free tier — potong per kebutuhan.</p>
         </CardContent>
       </Card>
     </>

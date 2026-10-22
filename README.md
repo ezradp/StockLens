@@ -12,7 +12,7 @@ Platform riset investasi web — fundamental, screener, DCF valuation, dan porto
 |---|---|---|
 | 1 — Foundation | Scaffolding, UI shell dark, migrasi SQL + RLS, testing pipeline | ✅ Selesai (7 migrasi diterapkan ke Supabase) |
 | 2 — Authentication | Supabase Auth, profiles, proxy guard, RLS test isolasi 2 user | ✅ Selesai (14/14 test, build hijau) |
-| 3 — Data | Seed historis (EDGAR + Tiingo), CSV import wizard | ⏳ |
+| 3 — Data | Seed historis (EDGAR + Tiingo), CSV import wizard | ✅ Selesai (seed 20 perusahaan + 563 laporan; wizard hidup; 45 test) |
 | 4 — Stock Explorer | Company detail, financial tables, charts, metrics | ⏳ |
 | 5 — Screener & Comparison | Filter, sorting, scoring, saved screens, compare | ⏳ |
 | 6 — DCF Engine | Kalkulator + sensitivity + scenarios | ⏳ |
@@ -58,7 +58,16 @@ cp .env.example .env
 # 2. Terapkan migrasi database (SQL murni + RLS)
 npm run db:migrate
 
-# 3. Jalankan development server
+# 3. (Opsional, gratis) Seed master perusahaan + fondamen via SEC EDGAR
+npm run db:seed
+
+# 4. (Opsional) Seed harga EOD — butuh free key Tiingo; tanpa key: dilewati jujur
+npm run db:seed:prices
+
+# 5. Cek stok data nyata di database
+npm run db:verify
+
+# 6. Jalankan development server
 npm run dev
 ```
 
@@ -90,12 +99,18 @@ state penyiapan yang jujur sampai kredensial/database tersedia — tanpa data pa
 ## Testing
 
 ```bash
-npm test            # unit + integration (RLS isolation) — berjalan bila kredensial ada
+npm test            # unit + integration (RLS isolation + koreografi import) — bila kredensial ada
 npm run test:watch
 # E2E (Playwright — butuh browser sekali saja):
 npx playwright install chromium
 npm run test:e2e
 ```
+
+Integrasi yang berjalan nyata melawan database (tanpa mock):
+1. **Isolasi RLS 2 user** — A tak bisa lihat/ubah/hapus data B.
+2. **Choreography CSV import** — authenticated *tidak* dapat INSERT `market_prices`
+   langsung; penulisan via service client tercatat `import_batch_id` milik user;
+   user tetap bisa membersihkan riwayat batch-nya sendiri.
 
 Fixture kalkulasi (golden tests, Fase 6–7) menggunakan nilai yang dihitung
 independen — bukan sekadar membandingkan snapshot halaman.

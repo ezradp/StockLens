@@ -34,3 +34,10 @@ Set lokal untuk pengujian: `SET "request.jwt.claims" = '{"sub":"<uuid>"}'`.
   `valuation_scenarios`, `saved_screens`, `research_notes`) memakai
   `DEFAULT app.auth_uid()`: INSERT dari client tidak perlu mengirim `user_id`,
   dan policy `WITH CHECK` (0005) tetap menolak `user_id` milik user lain.
+
+## Utak-atik constraint batch impor (0008)
+
+- `market_prices` & `financial_statements`: baris `source_type='import'` tak lagi wajib
+  memegang `import_batch_id` — FK batch memakai `ON DELETE SET NULL`, jadi menghapus
+  riwayat impor tidak boleh diblokir CHECK. Transparansi tetap dijamin lewat
+  `source_name` (nama file sumber); CHECK baru: baris impor wajib punya `source_name`.
