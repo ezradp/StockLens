@@ -10,10 +10,10 @@ Platform riset investasi web — fundamental, screener, DCF valuation, dan porto
 
 | Fase | Konten | Status |
 |---|---|---|
-| 1 — Foundation | Scaffolding, UI shell dark, migrasi SQL + RLS, testing pipeline | ✅ Selesai (7 migrasi diterapkan ke Supabase) |
+| 1 — Foundation | Scaffolding, UI shell dark, migrasi SQL + RLS, testing pipeline | ✅ Selesai (8 migrasi diterapkan ke Supabase) |
 | 2 — Authentication | Supabase Auth, profiles, proxy guard, RLS test isolasi 2 user | ✅ Selesai (14/14 test, build hijau) |
 | 3 — Data | Seed historis (EDGAR + Tiingo), CSV import wizard | ✅ Selesai (seed 20 perusahaan + 563 laporan; wizard hidup; 45 test) |
-| 4 — Stock Explorer | Company detail, financial tables, charts, metrics | ⏳ |
+| 4 — Stock Explorer | Company detail, financial tables, charts, metrics | ✅ Selesai (list search, candlestick+volume, 3 tabel laporan, metrik turunan teruji) |
 | 5 — Screener & Comparison | Filter, sorting, scoring, saved screens, compare | ⏳ |
 | 6 — DCF Engine | Kalkulator + sensitivity + scenarios | ⏳ |
 | 7 — Portfolio Tracker | Transaksi, cost basis, P/L, alokasi | ⏳ |

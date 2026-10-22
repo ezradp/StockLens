@@ -45,3 +45,14 @@ export function formatDate(value: string | Date | null | undefined): string {
   if (Number.isNaN(date.getTime())) return "—";
   return new Intl.DateTimeFormat(LOCALE, { dateStyle: "medium" }).format(date);
 }
+
+/** Nilai keuangan besar: $1.09B / $3.2T — label eksplisit dibutuhkan di pemanggil. */
+export function formatCompactCurrency(value: number | null | undefined, currency = "USD"): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) return "—";
+  const compact = new Intl.NumberFormat(LOCALE, {
+    notation: "compact",
+    maximumFractionDigits: 2,
+  }).format(Math.abs(value));
+  const prefix = value < 0 ? "-" : "";
+  return `${prefix}${currency === "USD" ? "$" : `${currency} `}${compact}`;
+}
