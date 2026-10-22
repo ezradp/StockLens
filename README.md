@@ -14,7 +14,7 @@ Platform riset investasi web — fundamental, screener, DCF valuation, dan porto
 | 2 — Authentication | Supabase Auth, profiles, proxy guard, RLS test isolasi 2 user | ✅ Selesai (14/14 test, build hijau) |
 | 3 — Data | Seed historis (EDGAR + Tiingo), CSV import wizard | ✅ Selesai (seed 20 perusahaan + 563 laporan; wizard hidup; 45 test) |
 | 4 — Stock Explorer | Company detail, financial tables, charts, metrics | ✅ Selesai (list search, candlestick+volume, 3 tabel laporan, metrik turunan teruji) |
-| 5 — Screener & Comparison | Filter, sorting, scoring, saved screens, compare | ⏳ |
+| 5 — Screener & Comparison | Filter, sorting, scoring, saved screens, compare | ✅ Selesai (filter+sort+skor 0–100, layar tersimpan RLS, compare 2–5; 64 test) |
 | 6 — DCF Engine | Kalkulator + sensitivity + scenarios | ⏳ |
 | 7 — Portfolio Tracker | Transaksi, cost basis, P/L, alokasi | ⏳ |
 | 8 — Insights & Research | Rule-based insights, notes | ⏳ |
