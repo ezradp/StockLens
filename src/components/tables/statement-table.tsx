@@ -60,15 +60,19 @@ export function StatementTableCard({ data }: { data: StatementTableData }) {
         <CardTitle>{data.title}</CardTitle>
         {data.note ? <CardDescription>{data.note}</CardDescription> : null}
       </CardHeader>
-      <CardContent className="overflow-x-auto">
-        <table className="w-full min-w-[420px] text-left text-sm">
+      <CardContent className="overflow-x-auto px-2 pb-2 pt-0">
+        <table className="w-full min-w-[560px] border-collapse text-left">
           <thead>
-            <tr className="border-b border-border text-xs text-muted-foreground">
-              <th scope="col" className="px-2 py-2 font-medium">
+            <tr className="border-b border-border">
+              <th scope="col" className="h-9 px-2 text-left text-[11px] font-normal text-muted-foreground">
                 Metrik
               </th>
               {data.columns.map((column) => (
-                <th scope="col" className="tnum px-2 py-2 font-medium" key={column.periodEnd}>
+                <th
+                  scope="col"
+                  className="tnum h-9 whitespace-nowrap px-2 text-right text-[11px] font-normal text-muted-foreground"
+                  key={column.periodEnd}
+                >
                   {column.label}
                 </th>
               ))}
@@ -76,12 +80,22 @@ export function StatementTableCard({ data }: { data: StatementTableData }) {
           </thead>
           <tbody>
             {data.rows.map((row) => (
-              <tr key={row.label} className="border-b border-border/40">
-                <th scope="row" className="px-2 py-2 text-xs font-normal text-muted-foreground">
+              <tr key={row.label} className="border-b border-rule last:border-b-0">
+                <th
+                  scope="row"
+                  className="h-[42px] px-2 text-left text-xs font-normal text-muted-foreground"
+                >
                   {row.label}
                 </th>
                 {row.values.map((value, index) => (
-                  <td className="tnum px-2 py-2" key={`${row.label}-${index}`}>
+                  <td
+                    className={
+                      value === "—"
+                        ? "tnum h-[42px] px-2 text-right text-[13px] text-muted-foreground/70"
+                        : "tnum h-[42px] px-2 text-right text-[13px] text-foreground"
+                    }
+                    key={`${row.label}-${index}`}
+                  >
                     {value}
                   </td>
                 ))}

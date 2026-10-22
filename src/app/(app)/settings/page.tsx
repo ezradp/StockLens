@@ -106,18 +106,20 @@ export default async function SettingsPage() {
             dijaga RLS: hanya pemilik yang bisa membacanya.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          {[
-            { label: "Email", value: user?.email ?? "—" },
-            { label: "Nama tampilan", value: profile?.display_name || "— (kosong)" },
-            { label: "Mata uang", value: profile?.preferred_currency ?? "USD" },
-            { label: "Tema", value: profile?.theme ?? "dark" },
-          ].map((item) => (
-            <div key={item.label} className="rounded-lg border border-border bg-background/60 px-4 py-3">
-              <p className="text-xs text-muted-foreground">{item.label}</p>
-              <p className="tnum mt-1 text-sm font-medium">{item.value}</p>
-            </div>
-          ))}
+        <CardContent>
+          <div className="grid gap-px bg-rule sm:grid-cols-2">
+            {[
+              { label: "Email", value: user?.email ?? "—" },
+              { label: "Nama tampilan", value: profile?.display_name || "— (kosong)" },
+              { label: "Mata uang", value: profile?.preferred_currency ?? "USD" },
+              { label: "Tema", value: profile?.theme ?? "dark" },
+            ].map((item) => (
+              <div key={item.label} className="bg-card px-4 py-3">
+                <p className="text-[11px] text-muted-foreground">{item.label}</p>
+                <p className="tnum mt-1 text-[13px] font-medium">{item.value}</p>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
@@ -129,20 +131,23 @@ export default async function SettingsPage() {
             tanpa membocorkan nilainya).
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent>
           {CONFIG_ITEMS.map((item) => {
             const ok = status[item.envKey];
             return (
               <div
                 key={item.envVars}
-                className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-border bg-background/60 px-4 py-3"
+                className="flex flex-wrap items-start justify-between gap-3 border-b border-rule py-3 last:border-b-0"
               >
                 <div>
-                  <p className="text-sm font-medium">
-                    {item.label} {item.required ? null : <Badge variant="secondary">opsional</Badge>}
+                  <p className="flex items-center gap-2 text-[13px] font-medium">
+                    {item.label}
+                    {item.required ? null : <Badge variant="secondary">opsional</Badge>}
                   </p>
                   <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">{item.envVars}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{item.note}</p>
+                  <p className="mt-1 max-w-[70ch] text-xs leading-5 text-muted-foreground">
+                    {item.note}
+                  </p>
                 </div>
                 {ok ? (
                   <Badge variant="success">
@@ -161,17 +166,10 @@ export default async function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Tampilan</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm">
-            Mode gelap charcoal adalah default produk. Toggle light mode akan tersedia di
-            halaman ini setelah penyiapan tema (Fase 9).
-          </p>
-        </CardContent>
-      </Card>
+      <p className="mt-4 text-[11px] leading-4 text-muted-foreground">
+        Mode gelap charcoal adalah default produk. Preferensi tema tersimpan di profil, tetapi
+        penggantinya belum aktif — tidak ada tombol yang berpura-pura bekerja.
+      </p>
     </>
   );
 }

@@ -1,8 +1,7 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
-import { signOutAction } from "@/app/(auth)/actions";
+import { connection } from "next/server";
 import { Sidebar } from "@/components/layout/sidebar";
-import { Button } from "@/components/ui/button";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getEnvStatus } from "@/lib/env";
 
@@ -19,6 +18,10 @@ export const instant = false;
 
 /** Seluruh route di bawah (app) menuntut sesi login valid (defence-in-depth selain proxy). */
 export default async function AppLayout({ children }: { children: ReactNode }) {
+  // Tandai request-time secara eksplisit: shell membaca sesi (cookies) dan tidak
+  // boleh dicoba diprerender.
+  await connection();
+
   const envStatus = getEnvStatus();
   let email: string | null = null;
 
@@ -31,19 +34,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-dvh">
-      <Sidebar />
-      <main className="md:pl-64">
-        {email ? (
-          <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-end gap-3 px-4 pt-4 md:px-8">
-            <span className="text-xs text-muted-foreground">{email}</span>
-            <form action={signOutAction}>
-              <Button type="submit" variant="ghost" size="sm">
-                Keluar
-              </Button>
-            </form>
-          </div>
-        ) : null}
-        <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-8">{children}</div>
+      <Sidebar email={email} />
+      <main className="md:pl-[var(--sidebar-width)]">
+        <div className="mx-auto w-full max-w-[1440px] px-4 py-5 sm:px-6 md:px-8 md:py-8">
+          {children}
+        </div>
       </main>
     </div>
   );

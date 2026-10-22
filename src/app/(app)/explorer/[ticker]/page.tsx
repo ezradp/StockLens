@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Lightbulb, LineChart, Table2 } from "lucide-react";
+import { ArrowLeft, LineChart, Table2 } from "lucide-react";
 import { computeFundamentals } from "@/engine/fundamentals";
 import { buildScreenerRows, type ScreenerSourceRow } from "@/engine/screener";
 import { buildInsights, insightCoverage, type Insight } from "@/engine/insights";
@@ -8,10 +8,9 @@ import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/states/empty-state";
 import { PriceChart, type PricePoint } from "@/components/charts/price-chart";
 import { StatementTableCard, buildStatementTable } from "@/components/tables/statement-table";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getEnvStatus } from "@/lib/env";
-import { formatCompactCurrency, formatPercent, formatDate } from "@/lib/format";
+import { formatCompactCurrency, formatCurrency, formatPercent, formatDate } from "@/lib/format";
 import { getCompanyDetail } from "@/server/companies";
 import type { StatementKind, StatementSnapshot } from "@/engine/fundamentals";
 
@@ -53,6 +52,13 @@ function CompanyDetail({
 
   const sortedPrices: PricePoint[] = [...prices].sort((a, b) => a.date.localeCompare(b.date));
   const latestPrice = sortedPrices.at(-1) ?? null;
+  const previousPrice = sortedPrices.at(-2) ?? null;
+  const dayChange =
+    latestPrice !== null && previousPrice !== null ? latestPrice.close - previousPrice.close : null;
+  const dayChangeRatio =
+    dayChange !== null && previousPrice !== null && previousPrice.close !== 0
+      ? dayChange / previousPrice.close
+      : null;
 
   // Kolom periode: income paling lengkap; di-cop 6 tahun terbaru.
   const periodEnds = [
@@ -139,15 +145,15 @@ function CompanyDetail({
   const insights = insightRow ? buildInsights(insightRow) : [];
   const coverageMissing = insightRow ? insightCoverage(insightRow) : [];
 
-  const TONE_TEXT: Record<Insight["tone"], string> = {
-    positive: "text-green-400",
-    neutral: "text-muted-foreground",
-    caution: "text-amber-400",
-  };
   const TONE_LABEL: Record<Insight["tone"], string> = {
     positive: "positif",
     neutral: "netral",
     caution: "kewaspadaan",
+  };
+  const TONE_DOT: Record<Insight["tone"], string> = {
+    positive: "bg-positive",
+    neutral: "bg-muted-foreground/60",
+    caution: "bg-warning",
   };
 
 
@@ -162,25 +168,43 @@ function CompanyDetail({
       </Link>
 
       <PageHeader
-        title={`${company.ticker} — ${company.name}`}
-        subtitle={`${company.sector ?? "Sektor tidak tercatat"}${company.industry ? ` · SIC ${company.industry}` : ""} · ${company.currency}`}
+        title={company.ticker}
+        subtitle={`${company.name} · ${company.sector ?? "Sektor tidak tercatat"}${company.industry ? ` · SIC ${company.industry}` : ""} · ${company.currency}`}
       >
         {latestPrice ? (
-          <Badge variant="secondary" className="tnum">
-            Terakhir: {formatCompactCurrency(latestPrice.close, company.currency)} ({formatDate(latestPrice.date)})
-          </Badge>
-        ) : null}
+          <div className="text-right">
+            <p className="tnum text-[20px] leading-6 text-foreground">
+              {formatCurrency(latestPrice.close, company.currency)}
+            </p>
+            {dayChange !== null && dayChangeRatio !== null ? (
+              <p
+                className={
+                  dayChange > 0
+                    ? "tnum mt-0.5 text-[11px] text-positive"
+                    : dayChange < 0
+                      ? "tnum mt-0.5 text-[11px] text-negative"
+                      : "tnum mt-0.5 text-[11px] text-muted-foreground"
+                }
+              >
+                {dayChange > 0 ? "+" : ""}
+                {formatCurrency(dayChange, company.currency)} · {formatPercent(dayChangeRatio, { signed: true })}
+              </p>
+            ) : null}
+            <p className="tnum mt-0.5 text-[11px] text-muted-foreground">
+              {formatDate(latestPrice.date)}
+            </p>
+          </div>
+        ) : (
+          <p className="tnum text-[20px] text-muted-foreground">—</p>
+        )}
       </PageHeader>
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <LineChart className="h-4 w-4" aria-hidden="true" />
-            Harga (candlestick + volume)
-          </CardTitle>
+          <CardTitle>Harga</CardTitle>
           <CardDescription>
             {sortedPrices.length > 0
-              ? `${sortedPrices.length} bar (${formatDate(sortedPrices[0]?.date)} — ${formatDate(latestPrice!.date)}); sumber data terlabel, bukan real-time.`
+              ? `Candlestick + volume · ${sortedPrices.length} bar (${formatDate(sortedPrices[0]?.date)} — ${formatDate(latestPrice!.date)}); harga penutupan mentah (belum disesuaikan split/dividen), bukan real-time.`
               : "Belum ada data harga untuk perusahaan ini."}
           </CardDescription>
         </CardHeader>
@@ -193,7 +217,10 @@ function CompanyDetail({
               title="Tidak ada baris harga"
               description="Isi via CSV Import (jalur utama) atau seed Tiingo bila Anda punya free key (PRICE_PROVIDER_API_KEY)."
               action={
-                <Link href="/import" className="text-xs text-primary hover:underline">
+                <Link
+                  href="/import"
+                  className="text-xs text-foreground underline decoration-control underline-offset-4 hover:decoration-accent"
+                >
                   Buka Data Import →
                 </Link>
               }
@@ -202,20 +229,20 @@ function CompanyDetail({
         </CardContent>
       </Card>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {metricCards.map((metric) => (
-          <Card key={metric.label}>
-            <CardContent>
-              <p className="text-xs text-muted-foreground">{metric.label}</p>
-              <p className="tnum mt-1 text-xl font-semibold">{metric.value}</p>
-              <p className="mt-0.5 text-[11px] text-muted-foreground">{metric.note}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <Card className="mt-6 overflow-hidden">
+        <div className="grid grid-cols-2 gap-px bg-rule md:grid-cols-3">
+          {metricCards.map((metric) => (
+            <div key={metric.label} className="bg-card px-5 py-4">
+              <p className="text-[11px] leading-4 text-muted-foreground">{metric.label}</p>
+              <p className="tnum mt-1.5 text-[20px] font-medium leading-6">{metric.value}</p>
+              <p className="mt-0.5 text-[11px] leading-4 text-muted-foreground">{metric.note}</p>
+            </div>
+          ))}
+        </div>
+      </Card>
 
       {anyStatements ? (
-        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+        <div className="mt-6 space-y-5">
           <StatementTableCard data={incomeTable} />
           <StatementTableCard data={balanceTable} />
           <StatementTableCard
@@ -232,7 +259,10 @@ function CompanyDetail({
             title="Belum ada laporan keuangan tersimpan"
             description="Jalankan npm run db:seed (SEC EDGAR, gratis) atau impor CSV fondamen di halaman Data Import."
             action={
-              <Link href="/import" className="text-xs text-primary hover:underline">
+              <Link
+                href="/import"
+                className="text-xs text-foreground underline decoration-control underline-offset-4 hover:decoration-accent"
+              >
                 Buka Data Import →
               </Link>
             }
@@ -243,39 +273,33 @@ function CompanyDetail({
       {insights.length > 0 ? (
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Lightbulb className="h-4 w-4" aria-hidden="true" />
-              Wawasan (aturan tetap)
-            </CardTitle>
+            <CardTitle>Wawasan</CardTitle>
             <CardDescription>
-              Aturan yang sama untuk semua perusahaan — transparan & diaudit dari kode,
+              Aturan tetap yang sama untuk semua perusahaan — transparan & diaudit dari kode,
               bukan AI. {coverageMissing.length > 0
                 ? `Tanpa data: ${coverageMissing.join(", ")} — aturan terkait tidak menyala (tidak dipalsukan).`
                 : "Semua metrik kunci tersedia."}
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <ul className="space-y-2 text-sm">
+          <CardContent className="pt-2">
+            <ul>
               {insights.map((insight) => (
-                <li key={insight.ruleId} className="flex items-start gap-2">
-                  <span className="mt-1 text-xs text-muted-foreground">
+                <li
+                  key={insight.ruleId}
+                  className="flex items-start gap-3 border-b border-rule py-2.5 last:border-b-0"
+                >
+                  <span className="mt-0.5 w-[76px] shrink-0 text-[11px] leading-4 text-muted-foreground">
                     {TONE_LABEL[insight.tone]}
                   </span>
                   <span
                     aria-hidden="true"
-                    className={
-                      insight.tone === "positive"
-                        ? "mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-green-500"
-                        : insight.tone === "caution"
-                          ? "mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500"
-                          : "mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400"
-                    }
+                    className={`mt-[6px] h-1.5 w-1.5 shrink-0 rounded-full ${TONE_DOT[insight.tone]}`}
                   />
-                  <span className={TONE_TEXT[insight.tone]}>
+                  <span className="flex-1 text-[13px] leading-5 text-foreground">
                     {insight.text}
-                    <span className="ml-2 font-mono text-[10px] text-muted-foreground">
-                      {insight.ruleId}
-                    </span>
+                  </span>
+                  <span className="tnum mt-0.5 shrink-0 text-[10px] text-muted-foreground">
+                    {insight.ruleId}
                   </span>
                 </li>
               ))}

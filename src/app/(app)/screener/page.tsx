@@ -26,7 +26,6 @@ export default async function ScreenerPage() {
           icon={SlidersHorizontal}
           title="Screener menunggu koneksi Supabase"
           description="Isi NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY di .env, jalankan migrasi dan seed. Tidak ada data demo — screener hanya hidup di atas data nyata."
-          phase="Fase 5 — Screener & Comparison"
         />
       </>
     );

@@ -44,8 +44,7 @@ interface ColumnDef {
 }
 
 const COLUMNS: ColumnDef[] = [
-  { field: "ticker", key: "ticker", label: "Ticker", fmt: "text" },
-  { field: "name", key: "name", label: "Nama", fmt: "text" },
+  { field: "ticker", key: "ticker", label: "Emiten", fmt: "text" },
   { field: "sector", key: "sector", label: "Sektor", fmt: "text" },
   { field: "latestPeriodEnd", key: "latestPeriodEnd", label: "Periode", fmt: "iso" },
   { field: "revenue", key: "revenue", label: "Pendapatan", fmt: "money" },
@@ -53,15 +52,14 @@ const COLUMNS: ColumnDef[] = [
   { field: "netMargin", key: "netMargin", label: "Margin NI", fmt: "pct" },
   { field: "roe", key: "roe", label: "ROE", fmt: "pct" },
   { field: "roa", key: "roa", label: "ROA", fmt: "pct" },
-  { field: "revenueGrowth1y", key: "revenueGrowth1y", label: "Pendapatan 1 th", fmt: "pctSigned" },
+  { field: "revenueGrowth1y", key: "revenueGrowth1y", label: "Pend. 1 th", fmt: "pctSigned" },
   { field: "revenueGrowth3y", key: "revenueGrowth3y", label: "CAGR 3 th", fmt: "pctSigned" },
   { field: "fcfMargin", key: "fcfMargin", label: "Margin FCF", fmt: "pct" },
-  { field: "de", key: "de", label: "Hutang÷ekuitas", fmt: "num" },
-  { field: "liabilitiesToAssets", key: "liabilitiesToAssets", label: "Liab÷aset", fmt: "pct" },
+  { field: "de", key: "de", label: "D/E", fmt: "num" },
+  { field: "liabilitiesToAssets", key: "liabilitiesToAssets", label: "Liab/aset", fmt: "pct" },
   { field: "pe", key: "pe", label: "P/E", fmt: "num" },
   { field: "latestClose", key: "latestClose", label: "Harga", fmt: "money" },
-  { field: "latestPriceDate", key: "latestPriceDate", label: "Tgl harga", fmt: "iso" },
-  { field: "priceReturn1y", key: "priceReturn1y", label: "Return 1 th", fmt: "pctSigned" },
+  { field: "priceReturn1y", key: "priceReturn1y", label: "Return 1y", fmt: "pctSigned" },
   { field: "score", key: "score", label: "Skor", fmt: "score" },
 ];
 
@@ -98,7 +96,7 @@ function renderCell(row: ScreenerRow, column: ColumnDef): ReactNode {
 }
 
 const inputClass =
-  "h-8 w-full rounded-md border border-border bg-background px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  "h-10 w-full rounded-[8px] border border-control bg-surface px-3 text-[13px] outline-none placeholder:text-muted-foreground/70 focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent";
 
 export function ScreenerView({
   rows,
@@ -215,24 +213,61 @@ export function ScreenerView({
                 ))}
               </select>
             </label>
-            {FILTER_DEFS.map((def) => (
-              <label key={def.key} className="block">
-                <span className="mb-1 block text-xs text-muted-foreground">
-                  {def.label}
-                  {def.asPercent ? " (%)" : ""}
-                </span>
-                <input
-                  type="number"
-                  step={def.asPercent ? 1 : 0.1}
-                  value={filterInputs[def.key]}
-                  onChange={(event) =>
-                    setFilterInputs((current) => ({ ...current, [def.key]: event.target.value }))
-                  }
-                  className={inputClass}
-                  aria-label={def.label}
-                />
-              </label>
-            ))}
+            {FILTER_DEFS.filter((def) => def.key !== "maxPe").map((def) => {
+              if (def.key === "minPe") {
+                const maxDef = FILTER_DEFS.find((item) => item.key === "maxPe");
+                return (
+                  <div key="pe-range" className="block">
+                    <span className="mb-1 block text-xs text-muted-foreground">
+                      P/E (min – maks)
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        step={0.1}
+                        value={filterInputs.minPe}
+                        onChange={(event) =>
+                          setFilterInputs((current) => ({ ...current, minPe: event.target.value }))
+                        }
+                        className={inputClass}
+                        placeholder="min"
+                        aria-label="P/E minimum"
+                      />
+                      <span className="text-xs text-muted-foreground">–</span>
+                      <input
+                        type="number"
+                        step={0.1}
+                        value={filterInputs.maxPe}
+                        onChange={(event) =>
+                          setFilterInputs((current) => ({ ...current, maxPe: event.target.value }))
+                        }
+                        className={inputClass}
+                        placeholder="maks"
+                        aria-label={maxDef?.label ?? "P/E maksimum"}
+                      />
+                    </div>
+                  </div>
+                );
+              }
+              return (
+                <label key={def.key} className="block">
+                  <span className="mb-1 block text-xs text-muted-foreground">
+                    {def.label}
+                    {def.asPercent ? " (%)" : ""}
+                  </span>
+                  <input
+                    type="number"
+                    step={def.asPercent ? 1 : 0.1}
+                    value={filterInputs[def.key]}
+                    onChange={(event) =>
+                      setFilterInputs((current) => ({ ...current, [def.key]: event.target.value }))
+                    }
+                    className={inputClass}
+                    aria-label={def.label}
+                  />
+                </label>
+              );
+            })}
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -263,32 +298,39 @@ export function ScreenerView({
           </CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
-          <table className="w-full min-w-[1100px] text-left text-sm">
+          <table className="w-full min-w-[1040px] border-collapse text-left">
             <thead>
-              <tr className="border-b border-border text-xs text-muted-foreground">
-                {COLUMNS.map((column) => (
-                  <th
-                    key={column.key}
-                    scope="col"
-                    className="whitespace-nowrap px-2 py-2 font-medium"
-                    aria-sort={
-                      sortField === column.field
-                        ? sortDir === "asc"
-                          ? "ascending"
-                          : "descending"
-                        : undefined
-                    }
-                  >
-                    <button
-                      type="button"
-                      onClick={() => handleHeaderClick(column)}
-                      className="cursor-pointer hover:text-foreground"
+              <tr className="border-b border-border">
+                {COLUMNS.map((column) => {
+                  const numeric = column.fmt !== "text";
+                  return (
+                    <th
+                      key={column.key}
+                      scope="col"
+                      className={
+                        numeric
+                          ? "h-9 whitespace-nowrap px-1 text-right text-[11px] font-normal text-muted-foreground"
+                          : "h-9 whitespace-nowrap px-1.5 text-left text-[11px] font-normal text-muted-foreground"
+                      }
+                      aria-sort={
+                        sortField === column.field
+                          ? sortDir === "asc"
+                            ? "ascending"
+                            : "descending"
+                          : undefined
+                      }
                     >
-                      {column.label}
-                      {sortField === column.field ? (sortDir === "asc" ? " ▲" : " ▼") : ""}
-                    </button>
-                  </th>
-                ))}
+                      <button
+                        type="button"
+                        onClick={() => handleHeaderClick(column)}
+                        className="cursor-pointer hover:text-foreground"
+                      >
+                        {column.label}
+                        {sortField === column.field ? (sortDir === "asc" ? " ↑" : " ↓") : ""}
+                      </button>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
@@ -300,21 +342,53 @@ export function ScreenerView({
                 </tr>
               ) : (
                 shownRows.map((row) => (
-                  <tr key={row.ticker} className="border-b border-border/40 hover:bg-muted/40">
-                    {COLUMNS.map((column) => (
-                      <td key={column.key} className="tnum whitespace-nowrap px-2 py-2">
-                        {column.key === "ticker" ? (
-                          <Link
-                            href={`/explorer/${row.ticker}`}
-                            className="font-semibold text-primary hover:underline"
-                          >
-                            {row.ticker}
-                          </Link>
-                        ) : (
-                          renderCell(row, column)
-                        )}
-                      </td>
-                    ))}
+                  <tr key={row.ticker} className="border-b border-rule last:border-b-0">
+                    {COLUMNS.map((column) => {
+                      const numeric = column.fmt !== "text";
+                      return (
+                        <td
+                          key={column.key}
+                          className={
+                            numeric
+                              ? "tnum h-[42px] whitespace-nowrap px-1 text-right text-[11px]"
+                              : "h-[42px] px-1.5 text-[13px]"
+                          }
+                        >
+                          {column.key === "ticker" ? (
+                            <span className="flex flex-col">
+                              <Link
+                                href={`/explorer/${row.ticker}`}
+                                className="w-fit text-[13px] font-semibold text-foreground decoration-accent/60 underline-offset-4 hover:underline"
+                              >
+                                {row.ticker}
+                              </Link>
+                              <span
+                                className="max-w-[120px] truncate text-[11px] text-muted-foreground"
+                                title={row.name}
+                              >
+                                {row.name}
+                              </span>
+                            </span>
+                          ) : column.key === "sector" ? (
+                            <span
+                              className="block max-w-[112px] truncate text-[11px] text-muted-foreground"
+                              title={row.sector ?? undefined}
+                            >
+                              {row.sector ?? "—"}
+                            </span>
+                          ) : column.key === "latestClose" ? (
+                            <span className="flex flex-col items-end">
+                              <span>{renderCell(row, column)}</span>
+                              <span className="text-[10px] text-muted-foreground">
+                                {row.latestPriceDate ?? "—"}
+                              </span>
+                            </span>
+                          ) : (
+                            renderCell(row, column)
+                          )}
+                        </td>
+                      );
+                    })}
                   </tr>
                 ))
               )}

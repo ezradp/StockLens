@@ -22,18 +22,18 @@ export function ErrorState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-3 rounded-xl border border-danger/30 bg-danger/5 px-6 py-12 text-center",
+        "flex flex-col items-start gap-2 rounded-[var(--radius-card)] border-l-2 border-negative bg-[var(--pill-negative-bg)] px-4 py-3",
         className,
       )}
       role="alert"
     >
-      <TriangleAlert className="h-8 w-8 text-danger" aria-hidden="true" />
-      <div className="space-y-1">
-        <p className="text-sm font-semibold">{title}</p>
-        <p className="mx-auto max-w-md text-xs text-muted-foreground">{description}</p>
-      </div>
+      <p className="flex items-center gap-2 text-[13px] font-medium text-[color:var(--pill-negative-ink)]">
+        <TriangleAlert className="h-4 w-4" aria-hidden="true" />
+        {title}
+      </p>
+      <p className="max-w-[60ch] text-xs leading-5 text-muted-foreground">{description}</p>
       {onRetry ? (
-        <Button variant="outline" size="sm" onClick={onRetry}>
+        <Button variant="outline" size="sm" onClick={onRetry} className="mt-1">
           Coba lagi
         </Button>
       ) : null}

@@ -38,11 +38,18 @@ export function PriceChart({ points }: { points: PricePoint[] }) {
       autoSize: true,
       layout: {
         background: { color: "transparent" },
-        textColor: "#8a8f98",
+        textColor: "#8a8c92",
+        fontFamily: "IBM Plex Mono, ui-monospace, monospace",
+        fontSize: 11,
+        attributionLogo: false,
       },
       grid: {
         vertLines: { visible: false },
-        horzLines: { color: "rgba(255,255,255,0.06)" },
+        horzLines: { color: "rgba(255,255,255,0.05)" },
+      },
+      crosshair: {
+        vertLine: { color: "#3a3a3e", labelBackgroundColor: "#212023" },
+        horzLine: { color: "#3a3a3e", labelBackgroundColor: "#212023" },
       },
       rightPriceScale: { borderVisible: false },
       timeScale: { borderVisible: false },
@@ -50,11 +57,11 @@ export function PriceChart({ points }: { points: PricePoint[] }) {
     chartRef.current = chart;
 
     const candleSeries: ISeriesApi<"Candlestick"> = chart.addSeries(CandlestickSeries, {
-      upColor: "#22c55e",
-      downColor: "#ef4444",
+      upColor: "#44a282",
+      downColor: "#e5566f",
       borderVisible: false,
-      wickUpColor: "#22c55e",
-      wickDownColor: "#ef4444",
+      wickUpColor: "#44a282",
+      wickDownColor: "#e5566f",
       priceFormat: { type: "price", precision: 2, minMove: 0.01 },
     });
     candleSeries.setData(
@@ -85,8 +92,8 @@ export function PriceChart({ points }: { points: PricePoint[] }) {
             value: point.volume,
             color:
               point.close >= point.open
-                ? "rgba(34, 197, 94, 0.35)"
-                : "rgba(239, 68, 68, 0.35)",
+                ? "rgba(68, 162, 130, 0.28)"
+                : "rgba(229, 86, 111, 0.28)",
           }) satisfies HistogramData,
       ),
     );

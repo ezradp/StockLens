@@ -25,7 +25,6 @@ export default async function ComparePage() {
           icon={GitCompare}
           title="Perbandingan menunggu koneksi Supabase"
           description="Isi kredensial Supabase di .env, jalankan migrasi dan seed. Tidak ada data demo — grafik tabel hanya hidup di atas data nyata yang tersimpan."
-          phase="Fase 5 — Screener & Comparison"
         />
       </>
     );

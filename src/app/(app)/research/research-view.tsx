@@ -16,9 +16,9 @@ import { buttonVariants } from "@/components/ui/button";
 import { formatDate } from "@/lib/format";
 
 const inputClass =
-  "h-8 w-full rounded-md border border-border bg-background px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  "h-10 w-full rounded-[8px] border border-control bg-surface px-3 text-[13px] outline-none focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent";
 const textareaClass =
-  "w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  "w-full rounded-[8px] border border-control bg-surface px-3 py-2 text-[13px] outline-none placeholder:text-muted-foreground/70 focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent";
 
 interface CompanyOption {
   id: string;
@@ -145,11 +145,11 @@ export function ResearchView({
       </Card>
 
       <div className="space-y-4">
-        <h2 className="text-sm font-semibold text-muted-foreground">
-          Catatan tersimpan ({notes.length})
+        <h2 className="text-[13px] font-medium text-foreground">
+          Catatan tersimpan <span className="tnum text-muted-foreground">({notes.length})</span>
         </h2>
         {notes.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-border bg-card/40 px-6 py-8 text-center text-sm text-muted-foreground">
+          <p className="border-t border-rule px-6 py-8 text-center text-[13px] text-muted-foreground">
             Belum ada catatan. Wawasan agregat lintas perusahaan tidak di sini — kartu
             wawasan per perusahaan ada di halaman detail explorer.
           </p>
@@ -162,7 +162,7 @@ export function ResearchView({
                   {note.ticker !== null ? (
                     <Link
                       href={`/explorer/${note.ticker}`}
-                      className="mr-2 font-medium text-primary hover:underline"
+                      className="mr-2 font-medium text-foreground underline decoration-control underline-offset-4 hover:decoration-accent"
                     >
                       {note.ticker}
                     </Link>

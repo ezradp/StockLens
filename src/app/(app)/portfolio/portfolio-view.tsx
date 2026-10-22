@@ -17,7 +17,7 @@ import {
 import { buttonVariants } from "@/components/ui/button";
 import { formatCompactCurrency, formatNumber, formatPercent, formatDate } from "@/lib/format";
 
-const PIE_COLORS = ["#22c55e", "#38bdf8", "#a78bfa", "#f59e0b", "#ef4444", "#14b8a6", "#f472b6", "#94a3b8"];
+const PIE_COLORS = ["#4a8ad6", "#2f639c", "#79a7dd", "#a3c2e8", "#8a8c92", "#5f6168", "#c9d9ec", "#3a3f4a"];
 
 const TX_LABELS: Record<TransactionType, string> = {
   buy: "Beli",
@@ -29,7 +29,7 @@ const TX_LABELS: Record<TransactionType, string> = {
 };
 
 const inputClass =
-  "h-8 w-full rounded-md border border-border bg-background px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  "h-10 w-full rounded-[8px] border border-control bg-surface px-3 text-[13px] outline-none placeholder:text-muted-foreground/70 focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent";
 
 export function PortfolioView({
   portfolios,
@@ -113,15 +113,15 @@ export function PortfolioView({
         </CardHeader>
         <CardContent className="space-y-4">
           {portfolios.length > 0 ? (
-            <ul className="flex flex-wrap items-center gap-2">
+            <ul className="flex flex-wrap items-baseline gap-x-5 gap-y-2">
               {portfolios.map((portfolio) => (
                 <li key={portfolio.id}>
                   <Link
                     href={`/portfolio?id=${portfolio.id}`}
                     className={
                       portfolio.id === activeId
-                        ? "inline-flex items-center rounded-full border border-primary bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
-                        : "inline-flex items-center gap-1 rounded-full border border-dashed border-border px-3 py-1 text-xs text-muted-foreground hover:border-foreground/40 hover:text-foreground"
+                        ? "rule-active inline-flex items-baseline gap-1 text-[13px] text-foreground"
+                        : "inline-flex items-baseline gap-1 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
                     }
                   >
                     {portfolio.name}
@@ -189,35 +189,37 @@ export function PortfolioView({
       </Card>
 
       {bundle === null || summary === null ? (
-        <p className="rounded-xl border border-dashed border-border bg-card/40 px-6 py-10 text-center text-sm text-muted-foreground">
+        <p className="border-t border-rule px-6 py-10 text-center text-[13px] text-muted-foreground">
           Pilih portofolio di atas untuk mulai mencatat transaksi.
         </p>
       ) : (
         <>
           {bundle.warnings.length > 0 ? (
-            <ul className="space-y-1 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-xs">
+            <ul className="mb-5 space-y-1 rounded-[var(--radius-card)] border-l-2 border-warning bg-[var(--pill-warning-bg)] px-4 py-3 text-xs text-[color:var(--pill-warning-ink)]">
               {bundle.warnings.map((warning) => (
                 <li key={warning}>{warning}</li>
               ))}
             </ul>
           ) : null}
 
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {[
-              { label: "Nilai total", value: formatCompactCurrency(summary.totalValue, currency), note: summary.totalValue === null ? "menunggu harga semua posisi" : "kas + pasar" },
-              { label: "Kas", value: formatCompactCurrency(summary.cashBalance, currency), note: `deposito bersih ${formatCompactCurrency(summary.netDeposits, currency)}` },
-              { label: "Unrealized P/L", value: marketValueLine(summary), note: summary.positionsWithoutPrice > 0 ? `${summary.positionsWithoutPrice} posisi tanpa harga` : "posisi terbuka" },
-              { label: "Realized P/L", value: formatCompactCurrency(summary.realizedPlTotal, currency), note: `dividen ${formatCompactCurrency(summary.dividendsTotal, currency)} · fee ${formatCompactCurrency(summary.feesTotal, currency)}` },
-            ].map((card) => (
-              <Card key={card.label}>
-                <CardContent>
-                  <p className="text-xs text-muted-foreground">{card.label}</p>
-                  <p className="tnum mt-1 text-lg font-semibold">{card.value}</p>
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">{card.note}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <Card className="mb-5 overflow-hidden">
+            <div className="grid grid-cols-2 gap-px bg-rule xl:grid-cols-4">
+              {[
+                { label: "Nilai total", value: formatCompactCurrency(summary.totalValue, currency), note: summary.totalValue === null ? "menunggu harga semua posisi" : "kas + pasar" },
+                { label: "Kas", value: formatCompactCurrency(summary.cashBalance, currency), note: `deposito bersih ${formatCompactCurrency(summary.netDeposits, currency)}` },
+                { label: "Unrealized P/L", value: marketValueLine(summary), note: summary.positionsWithoutPrice > 0 ? `${summary.positionsWithoutPrice} posisi tanpa harga` : "posisi terbuka" },
+                { label: "Realized P/L", value: formatCompactCurrency(summary.realizedPlTotal, currency), note: `dividen ${formatCompactCurrency(summary.dividendsTotal, currency)} · fee ${formatCompactCurrency(summary.feesTotal, currency)}` },
+              ].map((cell) => (
+                <div key={cell.label} className="bg-card px-5 py-4">
+                  <p className="text-[11px] leading-4 text-muted-foreground">{cell.label}</p>
+                  <p className="tnum mt-1.5 text-[20px] font-medium leading-6">{cell.value}</p>
+                  <p className="mt-0.5 text-[11px] leading-4 text-muted-foreground">
+                    {cell.note}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </Card>
 
           <div className="grid gap-4 lg:grid-cols-2">
             <Card>
@@ -364,7 +366,7 @@ export function PortfolioView({
                       {summary.positions.map((position) => (
                         <tr key={position.companyId} className="border-b border-border/40">
                           <td className="px-2 py-2">
-                            <Link href={`/explorer/${position.ticker}`} className="font-semibold text-primary hover:underline">
+                            <Link href={`/explorer/${position.ticker}`} className="font-semibold text-foreground underline decoration-control underline-offset-4 hover:decoration-accent">
                               {position.ticker}
                             </Link>
                             <span className="block text-xs text-muted-foreground">{position.name}</span>

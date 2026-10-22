@@ -42,7 +42,7 @@ export default async function ExplorerPage() {
     return (
       <>
         <PageHeader title="Stock Explorer" subtitle="Telusuri fundamental & harga perusahaan" />
-        <p className="rounded-xl border border-dashed border-border bg-card/40 px-6 py-12 text-center">
+        <p className="border-t border-rule px-6 py-12 text-center text-[13px] text-muted-foreground">
           Master perusahaan masih kosong. Jalankan <code>npm run db:seed</code> (SEC EDGAR, gratis)
           atau masukkan data sendiri lewat halaman import.
         </p>

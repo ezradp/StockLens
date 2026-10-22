@@ -107,17 +107,17 @@ export function CompareView({ rows }: { rows: ScreenerRow[] }) {
           />
 
           {selected.length > 0 ? (
-            <ul className="flex flex-wrap gap-2">
+            <ul className="flex flex-wrap items-baseline gap-x-5 gap-y-2">
               {selectedRows.map((row) => (
                 <li key={row.ticker}>
                   <button
                     type="button"
                     onClick={() => setSelected((current) => current.filter((t) => t !== row.ticker))}
-                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-border bg-muted/60 px-3 py-1 text-xs hover:bg-muted"
+                    className="rule-active inline-flex cursor-pointer items-center gap-1.5 text-[12px] text-foreground"
                     aria-label={`Lepaskan ${row.ticker} dari perbandingan`}
                   >
                     {row.ticker}
-                    <X className="h-3 w-3" aria-hidden="true" />
+                    <X className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
                   </button>
                 </li>
               ))}
@@ -128,9 +128,9 @@ export function CompareView({ rows }: { rows: ScreenerRow[] }) {
             </p>
           )}
 
-          {notice ? <p className="text-xs text-danger">{notice}</p> : null}
+          {notice ? <p className="text-xs text-negative">{notice}</p> : null}
 
-          <ul className="flex flex-wrap gap-2">
+          <ul className="flex flex-wrap items-baseline gap-x-5 gap-y-2">
             {candidates
               .filter((row) => !selected.includes(row.ticker))
               .slice(0, 24)
@@ -139,10 +139,10 @@ export function CompareView({ rows }: { rows: ScreenerRow[] }) {
                   <button
                     type="button"
                     onClick={() => addTicker(row.ticker)}
-                    className="cursor-pointer rounded-full border border-dashed border-border px-3 py-1 text-xs text-muted-foreground hover:border-foreground/40 hover:text-foreground"
+                    title={row.name}
+                    className="cursor-pointer text-[12px] text-muted-foreground transition-colors hover:text-foreground"
                   >
                     + {row.ticker}
-                    <span className="ml-1.5 text-muted-foreground">{row.name}</span>
                   </button>
                 </li>
               ))}
@@ -154,7 +154,7 @@ export function CompareView({ rows }: { rows: ScreenerRow[] }) {
       </Card>
 
       {selectedRows.length < 2 ? (
-        <p className="rounded-xl border border-dashed border-border bg-card/40 px-6 py-10 text-center text-sm text-muted-foreground">
+        <p className="border-t border-rule px-6 py-10 text-center text-[13px] text-muted-foreground">
           Pilih minimal 2 perusahaan untuk melihat tabel perbandingan.
         </p>
       ) : (
@@ -166,28 +166,37 @@ export function CompareView({ rows }: { rows: ScreenerRow[] }) {
               tersimpan (USD). Angka = metrik setahun terakhir yang tersimpan.
             </CardDescription>
           </CardHeader>
-          <CardContent className="overflow-x-auto">
-            <table className="w-full min-w-[520px] text-left text-sm">
+          <CardContent className="overflow-x-auto px-2 pb-2 pt-0">
+            <table className="w-full min-w-[520px] border-collapse text-left">
               <thead>
-                <tr className="border-b border-border text-xs text-muted-foreground">
-                  <th scope="col" className="px-2 py-2 font-medium">Metrik</th>
+                <tr className="border-b border-border">
+                  <th scope="col" className="h-9 px-2 text-left text-[11px] font-normal text-muted-foreground">
+                    Metrik
+                  </th>
                   {selectedRows.map((row) => (
-                    <th scope="col" className="px-2 py-2 font-medium" key={row.ticker}>
-                      <span className="text-foreground">{row.ticker}</span>
-                      <span className="block text-muted-foreground">{row.name}</span>
-                      {row.sector ? <span className="block">{row.sector}</span> : null}
+                    <th scope="col" className="h-9 px-2 text-right" key={row.ticker}>
+                      <span className="block text-[12px] font-semibold text-foreground">{row.ticker}</span>
+                      <span
+                        className="block max-w-[160px] truncate text-[11px] font-normal text-muted-foreground"
+                        title={row.name}
+                      >
+                        {row.name}
+                      </span>
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {COMPARE_METRICS.map((metric) => (
-                  <tr key={metric.key} className="border-b border-border/40">
-                    <th scope="row" className="px-2 py-2 text-left text-xs font-normal text-muted-foreground">
+                  <tr key={metric.key} className="border-b border-rule last:border-b-0">
+                    <th
+                      scope="row"
+                      className="h-[42px] px-2 text-left text-xs font-normal text-muted-foreground"
+                    >
                       {metric.label}
                     </th>
                     {selectedRows.map((row) => (
-                      <td key={row.ticker} className="tnum px-2 py-2">
+                      <td key={row.ticker} className="tnum h-[42px] px-2 text-right text-[13px]">
                         {renderValue(row, metric)}
                       </td>
                     ))}

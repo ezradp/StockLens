@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { Star } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/states/empty-state";
+import { buttonVariants } from "@/components/ui/button";
 
 export const metadata = {
   title: "Watchlists",
@@ -15,9 +17,13 @@ export default function WatchlistsPage() {
       />
       <EmptyState
         icon={Star}
-        title="Watchlists menunggu data tersimpan"
-        description="Beberapa watchlist per pengguna, catatan pribadi, harga terakhir yang tersedia (dengan sumber & timestamp), pengurutan, dan pintasan ke halaman detail perusahaan."
-        phase="Fase 2 (CRUD) & Fase 4 (data harga)"
+        title="Belum ada watchlist"
+        description="Fitur watchlist belum aktif di versi ini. Untuk sementara, pantau emiten dan metriknya lewat Stock Explorer."
+        action={
+          <Link href="/explorer" className={buttonVariants({ variant: "outline", size: "sm" })}>
+            Buka Stock Explorer
+          </Link>
+        }
       />
     </>
   );

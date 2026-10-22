@@ -28,7 +28,6 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
           icon={Wallet}
           title="Portfolio menunggu koneksi Supabase"
           description="Isi NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY di .env. Tabel portfolios & portfolio_transactions sudah disiapkan migrasi — tidak ada data demo."
-          phase="Fase 7 — Portfolio Tracker"
         />
       </>
     );

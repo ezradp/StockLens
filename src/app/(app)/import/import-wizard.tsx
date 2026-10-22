@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useRef, useState } from "react";
-import { CheckCircle2, Database, FileSpreadsheet, FileUp, Info, XCircle } from "lucide-react";
+import { CheckCircle2, Database, FileUp, Info, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -82,7 +82,7 @@ function WizardInner({ companies, onReset }: { companies: CompanyOption[]; onRes
   return (
     <div className="space-y-6">
       {commitState.status === "error" ? (
-        <p role="alert" className="flex items-start gap-2 rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-danger">
+        <p role="alert" className="flex items-start gap-2 rounded-[var(--radius-card)] border-l-2 border-negative bg-[var(--pill-negative-bg)] px-3 py-2 text-xs text-[color:var(--pill-negative-ink)]">
           <XCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           {commitState.message}
         </p>
@@ -98,7 +98,7 @@ function WizardInner({ companies, onReset }: { companies: CompanyOption[]; onRes
         </CardHeader>
         <CardContent className="space-y-5">
           {companies.length === 0 ? (
-            <p className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning">
+            <p className="flex items-start gap-2 rounded-[var(--radius-card)] border-l-2 border-warning bg-[var(--pill-warning-bg)] px-3 py-2 text-xs text-[color:var(--pill-warning-ink)]">
               <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
               Master perusahaan masih kosong — jalankan <code>npm run db:seed</code> terlebih
               dahulu, atau tambahkan preferen perusahaan lewat seed EDGAR.
@@ -115,14 +115,19 @@ function WizardInner({ companies, onReset }: { companies: CompanyOption[]; onRes
                   onClick={() => setDataType(option.id)}
                   aria-pressed={selected}
                   className={
-                    "rounded-lg border px-4 py-3 text-left transition-colors " +
+                    "rounded-[var(--radius-card)] border px-4 py-3 text-left transition-colors " +
                     (selected
-                      ? "border-primary bg-primary/10"
-                      : "border-border bg-background hover:border-foreground/20")
+                      ? "border-control bg-raised/40"
+                      : "border-border bg-transparent hover:border-control")
                   }
                 >
-                  <span className="flex items-center gap-2 text-sm font-medium">
-                    <FileSpreadsheet className="h-4 w-4" aria-hidden="true" />
+                  <span
+                    className={
+                      selected
+                        ? "rule-active inline-block text-[13px] font-medium text-foreground"
+                        : "inline-block text-[13px] font-medium text-muted-foreground"
+                    }
+                  >
                     {option.label}
                   </span>
                   <span className="mt-1 block text-xs text-muted-foreground">{option.hint}</span>
@@ -140,7 +145,7 @@ function WizardInner({ companies, onReset }: { companies: CompanyOption[]; onRes
                 id="import-company"
                 value={ticker}
                 onChange={(event) => setTicker(event.target.value)}
-                className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm"
+                className="h-10 w-full rounded-[8px] border border-control bg-surface px-3 text-[13px] outline-none focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent"
               >
                 {companies.map((company) => (
                   <option key={company.ticker} value={company.ticker}>
@@ -156,7 +161,7 @@ function WizardInner({ companies, onReset }: { companies: CompanyOption[]; onRes
                   aria-label="Unduh template CSV harga"
                   href={templateHref(PRICE_TEMPLATE)}
                   download="stocklens-template-harga.csv"
-                  className="h-9 rounded-md border border-border bg-background px-3 text-xs leading-9 hover:border-foreground/30"
+                  className="inline-flex h-8 items-center rounded-[var(--radius-control)] border border-control px-3 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
                 >
                   Harga
                 </a>
@@ -164,7 +169,7 @@ function WizardInner({ companies, onReset }: { companies: CompanyOption[]; onRes
                   aria-label="Unduh template CSV fondamen"
                   href={templateHref(FUNDAMENTALS_TEMPLATE)}
                   download="stocklens-template-fondamen.csv"
-                  className="h-9 rounded-md border border-border bg-background px-3 text-xs leading-9 hover:border-foreground/30"
+                  className="inline-flex h-8 items-center rounded-[var(--radius-control)] border border-control px-3 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
                 >
                   Fondamen
                 </a>
@@ -173,18 +178,28 @@ function WizardInner({ companies, onReset }: { companies: CompanyOption[]; onRes
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="import-file" className="text-xs font-medium text-muted-foreground">
-              File CSV (.csv)
-            </label>
-            <input
-              ref={fileInputRef}
-              id="import-file"
-              type="file"
-              accept=".csv,text/csv"
-              onChange={onFileChange}
-              className="block w-full cursor-pointer rounded-md border border-border bg-background px-3 py-2 text-xs file:mr-3 file:rounded file:border file:border-border file:bg-muted file:px-2 file:py-1 file:text-xs"
-            />
-            {fileError ? <p className="text-xs text-danger">{fileError}</p> : null}
+            <span className="block text-[11px] text-muted-foreground">File CSV (.csv)</span>
+            <div className="flex flex-wrap items-center gap-3">
+              <input
+                ref={fileInputRef}
+                id="import-file"
+                type="file"
+                accept=".csv,text/csv"
+                onChange={onFileChange}
+                className="sr-only"
+              />
+              <label
+                htmlFor="import-file"
+                className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-[var(--radius-control)] border border-control px-3 text-[12px] text-foreground transition-colors hover:border-muted-foreground"
+              >
+                <FileUp className="h-3.5 w-3.5" aria-hidden="true" />
+                Pilih file
+              </label>
+              <span className="text-[11px] text-muted-foreground">
+                {fileName || "Belum ada file — atau tempel CSV di bawah"}
+              </span>
+            </div>
+            {fileError ? <p className="text-xs text-negative">{fileError}</p> : null}
           </div>
 
           <textarea
@@ -197,10 +212,10 @@ function WizardInner({ companies, onReset }: { companies: CompanyOption[]; onRes
                 ? "date,open,high,low,close,volume\n2026-01-02,10,11,9,10.5,1000 ..."
                 : "period_end,revenue,net_income,total_assets\n2026-12-31,1000,200,5000 ..."
             }
-            className="tnum w-full rounded-md border border-border bg-background px-3 py-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="tnum w-full rounded-[8px] border border-control bg-surface px-3 py-2 text-xs outline-none placeholder:text-muted-foreground/70 focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent"
           />
 
-          <form action={previewDispatch} className="flex items-center gap-3">
+          <form action={previewDispatch} className="flex flex-wrap items-center gap-3">
             <input type="hidden" name="csv" value={csv} />
             <input type="hidden" name="dataType" value={dataType} />
             <input type="hidden" name="ticker" value={ticker} />
@@ -209,7 +224,7 @@ function WizardInner({ companies, onReset }: { companies: CompanyOption[]; onRes
               <FileUp className="h-4 w-4" aria-hidden="true" />
               {previewPending ? "Memeriksa…" : "2 · Periksa CSV"}
             </Button>
-            <span className="text-xs text-muted-foreground">
+            <span className="tnum text-[11px] text-muted-foreground">
               {csv.trim() === "" ? "Isi CSV terlebih dahulu" : `${csv.trim().split("\n").length} baris mentah terbaca di kolom`}
             </span>
           </form>
@@ -217,7 +232,7 @@ function WizardInner({ companies, onReset }: { companies: CompanyOption[]; onRes
       </Card>
 
       {previewState.status === "error" ? (
-        <p role="alert" className="flex items-start gap-2 rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-danger">
+        <p role="alert" className="flex items-start gap-2 rounded-[var(--radius-card)] border-l-2 border-negative bg-[var(--pill-negative-bg)] px-3 py-2 text-xs text-[color:var(--pill-negative-ink)]">
           <XCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           {previewState.message}
         </p>

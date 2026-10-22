@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { AUTH_INITIAL_STATE } from "../auth-state";
 import { signInAction } from "../actions";
@@ -12,61 +11,62 @@ export function LoginForm() {
   const [state, formAction, pending] = useActionState(signInAction, AUTH_INITIAL_STATE);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Masuk</CardTitle>
-        <CardDescription>Gunakan akun StockLens Anda</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form action={formAction} className="space-y-4">
-          {state.message && !state.ok ? (
-            <p
-              role="alert"
-              className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-danger"
-            >
-              {state.message}
-            </p>
-          ) : null}
+    <div>
+      <p className="text-[11px] text-muted-foreground">Akun</p>
+      <h1 className="mt-1.5 text-[26px] font-bold leading-8 tracking-[-0.02em]">Masuk</h1>
+      <p className="mt-1 text-[13px] text-muted-foreground">Gunakan akun StockLens Anda.</p>
 
-          <div className="space-y-1.5">
-            <label htmlFor="email" className="text-xs font-medium text-muted-foreground">
-              Email
-            </label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              placeholder="nama@email.com"
-              required
-            />
-          </div>
+      <form action={formAction} className="mt-6 space-y-4">
+        {state.message && !state.ok ? (
+          <p
+            role="alert"
+            className="border border-negative/30 bg-[var(--pill-negative-bg)] px-3 py-2 text-xs text-[color:var(--pill-negative-ink)]"
+          >
+            {state.message}
+          </p>
+        ) : null}
 
-          <div className="space-y-1.5">
-            <label htmlFor="password" className="text-xs font-medium text-muted-foreground">
-              Password
-            </label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-            />
-          </div>
+        <div className="space-y-1.5">
+          <label htmlFor="email" className="block text-[11px] text-muted-foreground">
+            Email
+          </label>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            placeholder="nama@email.com"
+            required
+          />
+        </div>
 
-          <Button type="submit" className="w-full" disabled={pending}>
-            {pending ? "Memproses…" : "Masuk"}
-          </Button>
-        </form>
+        <div className="space-y-1.5">
+          <label htmlFor="password" className="block text-[11px] text-muted-foreground">
+            Password
+          </label>
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            required
+          />
+        </div>
 
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          Belum punya akun?{" "}
-          <Link href="/register" className="text-primary hover:underline">
-            Daftar
-          </Link>
-        </p>
-      </CardContent>
-    </Card>
+        <Button type="submit" size="lg" className="w-full" disabled={pending}>
+          {pending ? "Memproses…" : "Masuk"}
+        </Button>
+      </form>
+
+      <p className="mt-6 border-t border-rule pt-4 text-xs text-muted-foreground">
+        Belum punya akun?{" "}
+        <Link
+          href="/register"
+          className="text-foreground underline decoration-control underline-offset-4 hover:decoration-accent"
+        >
+          Daftar
+        </Link>
+      </p>
+    </div>
   );
 }

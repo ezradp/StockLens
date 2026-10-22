@@ -48,7 +48,7 @@ function parseNumber(raw: string): number | null {
 }
 
 const inputClass =
-  "h-8 w-full rounded-md border border-border bg-background px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  "h-10 w-full rounded-[8px] border border-control bg-surface px-3 text-[13px] outline-none placeholder:text-muted-foreground/70 focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent";
 
 export function ValuationView({
   context,
@@ -286,7 +286,7 @@ export function ValuationView({
                                   terminalPct: String(Math.round(growth * 1000) / 10),
                                 }));
                               }}
-                              className="tnum cursor-pointer hover:text-primary"
+                              className="tnum cursor-pointer hover:text-foreground"
                             >
                               {formatNumber(cell, 2)}
                             </button>
