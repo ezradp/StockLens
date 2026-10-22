@@ -69,7 +69,7 @@ describe.skipIf(!RUN)("CSV import choreography (Supabase)", () => {
     if (signIn.error) throw new Error(`Login test gagal: ${signIn.error.message}`);
   });
 
-  it("user memimiliki batch impor, dan market_prices geldig ditulis via server", async () => {
+  it("user memiliki batch impor, dan market_prices valid ditulis via server", async () => {
     // 1) Batch disisipkan oleh USER (RLS own) — user_id default app.auth_uid().
     const batch = await userClient!
       .from("import_batches")

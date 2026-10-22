@@ -42,6 +42,7 @@ const fixture: CompanyFacts = {
           USD: usd([
             { start: "2023-01-01", end: "2023-12-31", val: 200, fy: 2023, form: "10-K", frame: "CY2023" },
             { start: "2022-01-01", end: "2022-12-31", val: 150, fy: 2022, form: "10-K", frame: "CY2022" },
+            { start: "2021-01-01", end: "2021-12-31", val: 120, fy: 2021, form: "10-K", frame: "CY2021" },
           ]),
         },
       },
@@ -61,7 +62,7 @@ const fixture: CompanyFacts = {
 describe("buildStatementsFromCompanyFacts", () => {
   const built = buildStatementsFromCompanyFacts(fixture, { maxYears: 10 });
 
-  it("menghasilkan bucket laporan per (tipe, tahun fiskal)", () => {
+  it("menghasilkan bucket laporan per (tipe, period end); jendela dari jangkar", () => {
     const income = built.statements.filter((s) => s.statementType === "income_statement");
     const balance = built.statements.filter((s) => s.statementType === "balance_sheet");
     expect(income).toHaveLength(3); // 2023, 2022, 2021

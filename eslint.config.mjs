@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Folder aset/tooling agent (skill) — bukan kode aplikasi.
+    ".agents/**",
   ]),
 ]);
 

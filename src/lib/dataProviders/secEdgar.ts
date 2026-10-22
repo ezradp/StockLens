@@ -96,6 +96,10 @@ export interface CompanyProfile {
 }
 
 interface SubmissionsPayload {
+  /** Respons /submissions menaruh field di root; `results` dipertahankan untuk kompatibilitas. */
+  name?: string;
+  sicDescription?: string;
+  sic?: string;
   results?: {
     name?: string;
     sicDescription?: string;
@@ -108,11 +112,11 @@ export async function fetchCompanyProfile(cik: number): Promise<CompanyProfile |
   try {
     const padded = String(cik).padStart(10, "0");
     const payload = await fetchEdgarJson<SubmissionsPayload>(`/submissions/CIK${padded}.json`);
-    const results = payload.results ?? {};
+    const fields = payload.results ?? payload;
     return {
-      name: results.name ?? "",
-      sector: results.sicDescription?.trim() || null,
-      industry: results.sic?.trim() || null,
+      name: fields.name?.trim() ?? "",
+      sector: fields.sicDescription?.trim() || null,
+      industry: fields.sic?.trim() || null,
     };
   } catch {
     return null;
@@ -157,14 +161,36 @@ export interface ConceptRule {
   tags: string[];
   kind: "duration" | "instant";
   statement: StatementType;
+  /** Jangkar: period end-nya menentukan jendela statement ini di window maksYears. */
+  anchor?: boolean;
 }
 
-/** Prioritas tag us-gaap — pertama yang tersedia menang (variasi perusahaan). */
+/** Prioritas tag us-gaap. Isi NILAI dilakukan PER PERIODE dengan fallback:
+ * tag pertama yang punya entri utk periode tsb menang — sehingga tag usang
+ * (AAPL "Revenues" 3 entri)—TETAP memicu periode lama yang tag modern tak punya,
+ * tanpa pernah menimpa tag modern. Selama ini pemilihan global "tag pertama /
+ * tag terbanyak" gagal karena XBRL fy = TAHUN FILINGS, bukan tahun periode. */
 export const CONCEPT_RULES: ConceptRule[] = [
-  { key: "revenue", tags: ["Revenues", "RevenueFromContractWithCustomerExcludingAssessedTax", "SalesRevenueNet"], kind: "duration", statement: "income_statement" },
-  { key: "net_income", tags: ["NetIncomeLoss"], kind: "duration", statement: "income_statement" },
+  {
+    key: "revenue",
+    tags: [
+      "Revenues",
+      "RevenueFromContractWithCustomerExcludingAssessedTax",
+      "RevenueFromContractWithCustomerIncludingAssessedTax",
+      "SalesRevenueNet",
+    ],
+    kind: "duration",
+    statement: "income_statement",
+  },
+  {
+    key: "net_income",
+    tags: ["NetIncomeLoss", "NetIncomeLossAvailableToCommonStockholdersBasic", "ProfitLoss"],
+    kind: "duration",
+    statement: "income_statement",
+    anchor: true,
+  },
   { key: "operating_income", tags: ["OperatingIncomeLoss"], kind: "duration", statement: "income_statement" },
-  { key: "total_assets", tags: ["Assets"], kind: "instant", statement: "balance_sheet" },
+  { key: "total_assets", tags: ["Assets"], kind: "instant", statement: "balance_sheet", anchor: true },
   { key: "total_liabilities", tags: ["Liabilities"], kind: "instant", statement: "balance_sheet" },
   { key: "total_equity", tags: ["StockholdersEquity"], kind: "instant", statement: "balance_sheet" },
   { key: "cash", tags: ["CashAndCashEquivalentsAtCarryingValue"], kind: "instant", statement: "balance_sheet" },
@@ -188,12 +214,15 @@ function daySpan(u: FactUnit): number | null {
   return Number.isFinite(span) ? span / MS_PER_DAY : null;
 }
 
-/** Unit USD, bentuk 10-K; duration ≥ ~9.5 bln; buang nilai duplikat identik. */
+/** Unit USD, bentuk 10-K; duration ≥ ~9.5 bln; buang nilai duplikat identik.
+ * Form wajib 10-K (varian 10-K/A, 10-K405 ikut) — 10-Q TIDAK boleh lolos:
+ * filer tertentu (suvenir nyata: AMZN) menandai nilai TTM 12-bulan di 10-Q
+ * yang span-nya ≥330 hari dan bisa mencemari jendela periode jangkar. */
 function pickAnnualUsdEntries(units: Record<string, FactUnit[]> | undefined): FactUnit[] {
   const usd = units?.USD ?? [];
   return usd.filter((u) => {
     if (typeof u.val !== "number" || !Number.isFinite(u.val)) return false;
-    if (u.form && !u.form.startsWith("10-")) return false;
+    if (u.form && !u.form.startsWith("10-K")) return false; // 10-Q ditolak (TTM?)
     if (u.start) {
       const span = daySpan(u);
       if (span === null || span < 330) return false; // kuartal/semester terfilter di sini
@@ -229,72 +258,106 @@ export interface BuiltStatements {
 
 /**
  * Bangun draft laporan tahunan dari companyfacts.
- * - Setiap bucket = satuan (statement_type, tahun fiskal); duration dipasangkan via end-nya.
- * - Batasi himpunan tahun terakhir supaya seed fokus pada data yang relevan.
+ * - Bucket = pasangan (statement_type, tanggal period end) — BUKAN tahun `fy`,
+ *   karena di XBRL `fy` adalah tahun FILING (periode 2016 yang dibandingkan di
+ *   10-K FY2018 tetap membawa fy=2018; bekas kunci fy jadi mencampur periode).
+ * - Jendela N periode terakhir per statement diambil dari aturan JANGKAR:
+ *   net_income (income), total_assets (balance); cash flow mengikuti income.
+ * - Setiap metrik diisi PER PERIODE dengan fallback tag: tag pertama yang punya
+ *   entri untuk period end itu yang menang (prioritas = urutan rule.tags).
+ *   Entri yang end-nya tidak sama dengan periode jangkar dibuang alami —
+ *   contoh span komparatif Jan-1→Jan-1 tidak pernah cocok dengan periode fiskal.
+ * - `fiscalYear` hanya aproksimasi label dari tahun period end (DB memakai
+ *   period_end; konsumen baca periodEnd/data/statementType).
  */
 export function buildStatementsFromCompanyFacts(facts: CompanyFacts, opts: { maxYears?: number } = {}): BuiltStatements {
   const usGaap = facts.facts?.["us-gaap"] ?? {};
   const maxYears = opts.maxYears ?? 10;
 
-  // Kumpulkan entry per rule dulu.
-  type PerRule = { rule: ConceptRule; entries: FactUnit[] };
+  // 1. Kandidat per rule: entri lolos filter + dedupe, diurut sesuai prioritas
+  //    rule.tags. Tidak ada pemilihan satu tag "juara" global lagi.
+  type Candidate = { tag: string; entries: FactUnit[] };
+  type PerRule = { rule: ConceptRule; candidates: Candidate[] };
   const perRule: PerRule[] = [];
   const missing: string[] = [];
 
   for (const rule of CONCEPT_RULES) {
-    let entries: FactUnit[] = [];
+    const candidates: Candidate[] = [];
     for (const tag of rule.tags) {
       const concept = usGaap[tag];
       if (!concept?.units) continue;
       const picked = dedupeSamePeriod(pickAnnualUsdEntries(concept.units));
-      if (picked.length > 0) {
-        entries = picked;
-        break;
-      }
+      if (picked.length > 0) candidates.push({ tag, entries: picked });
     }
-    if (entries.length === 0) {
+    if (candidates.length === 0) {
       missing.push(rule.key);
       continue;
     }
-    perRule.push({ rule, entries });
+    perRule.push({ rule, candidates });
   }
 
   if (perRule.length === 0) return { statements: [], missingConcepts: missing };
 
-  // Tentukan himpunan tahun umum: gabungan fy/fallback end-year, ambil N tahun terakhir.
-  const years = new Set<number>();
-  for (const { entries } of perRule) {
-    for (const entry of entries) {
-      years.add(entry.fy ?? Number.parseInt(toIsoDate(entry.end).slice(0, 4), 10));
+  // 2. Jendela periode per statement — dari period end jangkar (periode fiskal
+  //    asli perusahaan), bukan fy filing. Tanpa jangkar: cash flow ikut income;
+  //    kalau pun kosong → union semua end milik statement sendiri, top-N.
+  const anchorEnds = new Map<StatementType, Set<string>>();
+  const allEndsByStatement = new Map<StatementType, Set<string>>();
+  for (const { rule, candidates } of perRule) {
+    const all = allEndsByStatement.get(rule.statement) ?? new Set<string>();
+    for (const cand of candidates) {
+      for (const entry of cand.entries) all.add(toIsoDate(entry.end));
+    }
+    allEndsByStatement.set(rule.statement, all);
+    if (rule.anchor) {
+      const anchor = anchorEnds.get(rule.statement) ?? new Set<string>();
+      for (const cand of candidates) {
+        for (const entry of cand.entries) anchor.add(toIsoDate(entry.end));
+      }
+      anchorEnds.set(rule.statement, anchor);
     }
   }
-  const recentYears = [...years].sort((a, b) => b - a).slice(0, maxYears);
-  const yearSet = new Set(recentYears);
 
-  // Hasil per (statement, periodEnd/fy).
+  function windowFor(statement: StatementType): string[] {
+    const direct = anchorEnds.get(statement);
+    const source =
+      direct ??
+      (statement === "cash_flow" ? anchorEnds.get("income_statement") : undefined) ??
+      allEndsByStatement.get(statement) ??
+      new Set<string>();
+    return [...source].sort((a, b) => b.localeCompare(a)).slice(0, maxYears);
+  }
+
+  // 3. Isi bucket per (statement, period end); tiap metrik satu nilai per
+  //    periode, dipilih dari tag paling prioritas yang punya entri di periode itu.
   const buckets = new Map<string, StatementDraft>();
-  for (const { rule, entries } of perRule) {
-    for (const entry of entries) {
-      const periodEnd = toIsoDate(entry.end);
-      const year = entry.fy ?? Number.parseInt(periodEnd.slice(0, 4), 10);
-      if (!yearSet.has(year)) continue;
-      const key = `${rule.statement}|${year}`;
-      const existing = buckets.get(key) ?? {
-        statementType: rule.statement,
-        periodEnd,
-        fiscalYear: year,
-        data: {} as Record<string, number>,
-      };
-      // Bungkus: setiap metrik cukup satu nilai per tahun; periodEnd tetap
-      // tanggal end dari entri pertama yang membuat bucket (semua 10-K satu fisik tahun
-      // memakai tanggal fiskal yang sama).
-      existing.data[rule.key] = entry.val;
-      buckets.set(key, existing);
+  const windows = new Map<StatementType, string[]>();
+  for (const { rule, candidates } of perRule) {
+    let window = windows.get(rule.statement);
+    if (!window) {
+      window = windowFor(rule.statement);
+      windows.set(rule.statement, window);
+    }
+    for (const end of window) {
+      for (const cand of candidates) {
+        const hit = cand.entries.find((entry) => toIsoDate(entry.end) === end);
+        if (!hit) continue;
+        const key = `${rule.statement}|${end}`;
+        const bucket = buckets.get(key) ?? {
+          statementType: rule.statement,
+          periodEnd: end,
+          fiscalYear: Number.parseInt(end.slice(0, 4), 10),
+          data: {} as Record<string, number>,
+        };
+        bucket.data[rule.key] = hit.val;
+        buckets.set(key, bucket);
+        break; // periode ini sudah terisi dari tag paling prioritas
+      }
     }
   }
 
   const statements = [...buckets.values()].sort(
-    (a, b) => a.statementType.localeCompare(b.statementType) || b.fiscalYear - a.fiscalYear,
+    (a, b) => a.statementType.localeCompare(b.statementType) || b.periodEnd.localeCompare(a.periodEnd),
   );
   return { statements, missingConcepts: missing };
 }

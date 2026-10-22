@@ -4,6 +4,7 @@
  * semua user terautentikasi; tidak ada write di sini).
  */
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { StatementKind, StatementSnapshot } from "@/engine/fundamentals";
 
 export interface CompanySummary {
@@ -44,6 +45,38 @@ export interface CompanyDetail {
 
 const MAX_ANNUAL_ROWS = 2_000;
 const MAX_PRICE_ROWS = 20_000;
+/** Batas hard PostgREST per request — paginasi harga harus mengetahuinya. */
+const PRICE_PAGE_SIZE = 1_000;
+
+interface RawPriceRow {
+  date: string;
+  open: number | null;
+  high: number | null;
+  low: number | null;
+  close: number | null;
+  volume: number | null;
+}
+
+/** Baca market_prices bertingkat (maks 1.000/request) sampai habis / cap. */
+async function fetchPriceRows(
+  supabase: SupabaseClient,
+  companyId: string,
+): Promise<RawPriceRow[]> {
+  const rows: RawPriceRow[] = [];
+  for (let offset = 0; offset < MAX_PRICE_ROWS; offset += PRICE_PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("market_prices")
+      .select("date, open, high, low, close, volume")
+      .eq("company_id", companyId)
+      .order("date", { ascending: true })
+      .range(offset, offset + PRICE_PAGE_SIZE - 1);
+    if (error) throw new Error(`market_prices halaman ${offset}: ${error.message}`);
+    if (!data || data.length === 0) break; // sudah lewat baris terakhir
+    rows.push(...(data as RawPriceRow[]));
+    if (data.length < PRICE_PAGE_SIZE) break; // halaman terakhir
+  }
+  return rows.slice(0, MAX_PRICE_ROWS);
+}
 
 export async function listCompanySummaries(): Promise<CompanySummary[]> {
   const supabase = await createSupabaseServerClient();
@@ -118,7 +151,7 @@ export async function getCompanyDetail(ticker: string): Promise<CompanyDetail | 
     .maybeSingle();
   if (!company) return null;
 
-  const [{ data: statementRows }, { data: priceRows }] = await Promise.all([
+  const [{ data: statementRows }, priceRows] = await Promise.all([
     supabase
       .from("financial_statements")
       .select("statement_type, period_end, data_json")
@@ -126,12 +159,9 @@ export async function getCompanyDetail(ticker: string): Promise<CompanyDetail | 
       .eq("period_type", "annual")
       .order("period_end", { ascending: true })
       .limit(MAX_ANNUAL_ROWS),
-    supabase
-      .from("market_prices")
-      .select("date, open, high, low, close, volume")
-      .eq("company_id", company.id)
-      .order("date", { ascending: true })
-      .limit(MAX_PRICE_ROWS),
+    // PostgREST maks 1.000 baris/request — paginasi via range() agar chart detail
+    // memuat SELURUH riwayat (bukan 1.000 bar pertama yang penuh dengan 2020).
+    fetchPriceRows(supabase, company.id),
   ]);
 
   const statements = (statementRows ?? []).map((row) => ({
@@ -140,15 +170,21 @@ export async function getCompanyDetail(ticker: string): Promise<CompanyDetail | 
     data: (row.data_json ?? {}) as Record<string, number>,
   }));
 
-  const prices = (priceRows ?? [])
-    .filter((row) => typeof row.close === "number" && typeof row.open === "number" && typeof row.high === "number" && typeof row.low === "number")
+  const prices = priceRows
+    .filter(
+      (row): row is RawPriceRow & { open: number; high: number; low: number; close: number } =>
+        typeof row.close === "number" &&
+        typeof row.open === "number" &&
+        typeof row.high === "number" &&
+        typeof row.low === "number",
+    )
     .map((row) => ({
       date: row.date,
       open: row.open,
       high: row.high,
       low: row.low,
       close: row.close,
-      volume: row.volume,
+      volume: row.volume ?? 0,
     }));
 
   return {
